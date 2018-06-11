@@ -1,32 +1,259 @@
-# Prerequisites
-*.d
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+#include <iostream>
+#include <sstream>
 
-# Precompiled Headers
-*.gch
-*.pch
+using namespace std;
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+template <typename T>
+class tree_t {
+private:
+    struct node_t {
+        node_t* left;
+        node_t* right;
+        T key;
+    };
 
-# Fortran module files
-*.mod
-*.smod
+private:
+    node_t* root_;
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+public:
+    tree_t()
+    {
+        root_ = 0;
+    }
+    static void del(node_t* node)
+    {
+        if (node != nullptr) {
+            if (node->left)
+                del(node->left);
+            if (node->right)
+                del(node->right);
+            delete node;
+        }
+    }
 
-# Executables
-*.exe
-*.out
-*.app
+    ~tree_t()
+    {
+        del(root_);
+    }
+
+    node_t root() const
+    {
+        return root_;
+    }
+
+    bool insert(T key)
+    {
+        bool success = false;
+
+        if (root_ == nullptr) {
+            root_ = new node_t;
+            root_->key = key;
+            root_->left = nullptr;
+            root_->right = nullptr;
+            return (!success);
+        }
+        else {
+            node_t* step = root_;
+            while (step != nullptr) {
+                if (key > step->key) {
+                    if (step->left == nullptr) {
+                        step->left = new node_t;
+                        step = step->left;
+                        step->key = key;
+                        return (!success);
+                    }
+                    else {
+                        step = step->left;
+                    }
+                }
+                else if (key < step->key) {
+                    if (step->right == nullptr) {
+                        step->right = new node_t;
+                        step = step->right;
+                        step->key = key;
+                        return (!success);
+                    }
+                    else {
+                        step = step->right;
+                    }
+                    else
+                    {
+                        return success;
+                    }
+                }
+            }
+        }
+
+        bool remove(T key)
+        {
+            if (root_ == nullptr) {
+                return false;
+            }
+            else {
+                node_t* param1 = nullptr;
+                node_t* param2 = root_;
+                while (1) {
+                    if (param2->key == key) {
+                        break;
+                    }
+                    else if (key > param2->key) {
+                        param1 = param2;
+                        param2 = param2->right;
+                    }
+                    else if (key < param2->key) {
+                        param1 = param2;
+                        param2 = param2->left;
+                    }
+                    if (param2 == nullptr) {
+                        return false;
+                    }
+                }
+                if (param2->left == nullptr && param2->right == nullptr) {
+                    if (param2 == root_) {
+                        node_t* node = root_;
+                        root_ = nullptr;
+                        delete node;
+                    }
+                    else {
+                        if (param1->left == param2) {
+                            param1->left = nullptr;
+                            delete param2;
+                        }
+                        if (param1->right == param2) {
+                            param1->right = nullptr;
+                            delete param2;
+                        }
+                    }
+                }
+                else if ((param2->left != nullptr && param2->right == nullptr) || (param2->left == nullptr && param2->right != nullptr)) {
+                    if (param2 == root_) {
+                        node_t* node = root_;
+                        if (param2->left != nullptr) {
+                            root_ = param2->left;
+                        }
+                        else if (param2->right != nullptr) {
+                            root_ = param2->left;
+                        }
+                        delete node;
+                    }
+                    else {
+                        if (param1->left == param2) {
+                            if (param2->left != nullptr) {
+                                param1->left = param2->left;
+                                delete param2;
+                            }
+                            else if (param2->right != nullptr) {
+                                param1->left = param2->right;
+                                delete param2;
+                            }
+                        }
+                        else if (param1->right == param2) {
+                            if (param2->left != nullptr) {
+                                param1->right = param2->left;
+                                delete param2;
+                            }
+                            else if (param2->right != nullptr) {
+                                param1->right = param2->right;
+                                delete param2;
+                            }
+                        }
+                    }
+                }
+                else if (param2->left != nullptr && param2->right != nullptr) {
+                    node_t* node = param2;
+                    param1 = param2;
+                    param2 = param2->right;
+                    if (param2->left == nullptr) {
+                        if (param2->right == nullptr) {
+                            node->key = param2->key;
+                            param1->right = nullptr;
+                            delete param2;
+                        }
+                        else {
+                            node->key = param2->key;
+                            param1->right = param2->right;
+                            delete param2;
+                        }
+                    }
+                    else {
+                        while (param2->left != nullptr) {
+                            param1 = param2;
+                            param2 = param2->left;
+                        }
+                        if (param2->right == nullptr) {
+                            node->key = param2->key;
+                            param1->left = nullptr;
+                            delete param2;
+                        }
+                        else {
+                            node->key = param2->key;
+                            param1->left = param2->right;
+                            delete param2;
+                        }
+                    }
+                }
+                return true;
+            }
+        }
+
+        bool find(int key) const
+        {
+            node_t* temp = root_;
+            while (temp != nullptr) {
+                if (key == temp->key) {
+                    return true;
+                }
+                else {
+                    if (key > temp->key) {
+                        temp = temp->right;
+                    }
+                    else {
+                        temp = temp->left;
+                    }
+                }
+            }
+            return false;
+        }
+
+        void print(std::ostream & stream, int i = 1) const
+        {
+            if (node->right) {
+                i++;
+                print(stream, node->right, i);
+                i--;
+            }
+            for (size_t k = 0; k < i; k++) {
+                stream << "--";
+            }
+            stream << node->value << std::endl;
+            if (node->left) {
+                i++;
+                print(stream, node->left, i);
+                i--;
+            }
+        }
+    };
+
+    template <typename T>
+    void read(std::ostringstream& stream, tree_t& tree, T key)
+    {
+
+        char op;
+        bool fail = false;
+        while (read(op, key, fail)) {
+            if (op == '=') {
+                tree.print(stream, tree.root());
+                std::cout << stream.str();
+            }
+            else {
+                if (op == '+')
+                    tree.insert(value);
+                if (op == '?')
+                    tree.find(value);
+            }
+        }
+        if (fail)
+            std::cerr << "fail";
+    }
+};
